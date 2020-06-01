@@ -1,0 +1,5 @@
+{
+    "editor.parameterHints.cycle": true,
+    "terminal.integrated.allowMnemonics": true,
+    "npm.enableRunFromFolder": true
+}

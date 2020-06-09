@@ -3,6 +3,9 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+//added cookie session and filestore
+const session = require('express-session');
+const fileStore = require('session-file-store')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -34,11 +37,23 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser('12345-67890-09876-54321'));
+// we cannot use cookieParser and sessions together causes conflicts
+//app.use(cookieParser('12345-67890-09876-54321'));
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninititalized: false,
+  resave: false,
+  store: new fileStore()
+}));
 // this is where we'll add authentication
 function auth(req,res,next) {
   //console.log(req.headers);
-  if(!req.signedCookies.user){
+  //see what the session data is
+  console.log(req.session);
+
+  //if(!req.signedCookies.user){ - only good with cookies not session
+  if(!req.session.user){
       const authHeader = req.headers.authorization;
       if (!authHeader) {
         const err = new Error("You are not authenticated!");
@@ -50,7 +65,8 @@ function auth(req,res,next) {
       const user = auth[0];
       const pass = auth[1];
       if (user === 'admin' && pass === 'password') {
-        res.cookie('user','admin',{signed: true});
+        //res.cookie('user','admin',{signed: true}); only cookie not session
+        req.session.user = 'admin';
         return next(); //authorized
       } else {
           const err = new Error('You are not authenticated!');
@@ -59,7 +75,8 @@ function auth(req,res,next) {
           return next(err);
       }
   }else {
-    if (req.signedCookies.user === 'admin') {
+    //if (req.signedCookies.user === 'admin') {
+      if (req.session.user === 'admin') {  
       return next();
     } else {
           const err = new Error('You are not authenticated!');

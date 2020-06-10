@@ -6,6 +6,8 @@ var logger = require('morgan');
 //added cookie session and filestore
 const session = require('express-session');
 const fileStore = require('session-file-store')(session);
+const passport = require('passport');
+const authenticate = require('./authenticate');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -47,44 +49,23 @@ app.use(session({
   store: new fileStore()
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/users', usersRouter); 
 
 // this is where we'll add authentication
 function auth(req,res,next) {
-  //console.log(req.headers);
-  //see what the session data is
-  console.log(req.session);
+  console.log(req.user);
 
-  //if(!req.signedCookies.user){ - only good with cookies not session
-  if(!req.session.user){
+  if(!req.user){
       const err = new Error("You are not authenticated!");
       err.status = 401;
       return next(err);
-      /* remove logic to do auth here we do in users.js now
-      const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-      const user = auth[0];
-      const pass = auth[1];
-      if (user === 'admin' && pass === 'password') {
-        //res.cookie('user','admin',{signed: true}); only cookie not session
-        req.session.user = 'admin';
-        return next(); //authorized
-      } else {
-          const err = new Error('You are not authenticated!');
-          res.setHeader('WWW-Authenticate','Basic');
-          err.status = 401;
-          return next(err);
-      } */
   }else {
-    //if (req.signedCookies.user === 'admin') {
-      if (req.session.user === 'authenticated') {   // this is value set in users.js
       return next();
-    } else {
-          const err = new Error('You are not authenticated!');
-          err.status = 401;
-          return next(err);
-    }
-  }
+    } 
 }
 
 app.use(auth);

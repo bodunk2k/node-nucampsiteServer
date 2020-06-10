@@ -46,6 +46,10 @@ app.use(session({
   resave: false,
   store: new fileStore()
 }));
+
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
 // this is where we'll add authentication
 function auth(req,res,next) {
   //console.log(req.headers);
@@ -54,13 +58,10 @@ function auth(req,res,next) {
 
   //if(!req.signedCookies.user){ - only good with cookies not session
   if(!req.session.user){
-      const authHeader = req.headers.authorization;
-      if (!authHeader) {
-        const err = new Error("You are not authenticated!");
-        res.setHeader('WWW-Authenticate','Basic');
-        err.status = 401;
-        return next(err);
-      }
+      const err = new Error("You are not authenticated!");
+      err.status = 401;
+      return next(err);
+      /* remove logic to do auth here we do in users.js now
       const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
       const user = auth[0];
       const pass = auth[1];
@@ -73,10 +74,10 @@ function auth(req,res,next) {
           res.setHeader('WWW-Authenticate','Basic');
           err.status = 401;
           return next(err);
-      }
+      } */
   }else {
     //if (req.signedCookies.user === 'admin') {
-      if (req.session.user === 'admin') {  
+      if (req.session.user === 'authenticated') {   // this is value set in users.js
       return next();
     } else {
           const err = new Error('You are not authenticated!');
@@ -89,8 +90,7 @@ function auth(req,res,next) {
 app.use(auth);
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
 app.use('/campsites', campsiteRouter);
 app.use('/promotions', promotionRouter);
 app.use('/partners', partnerRouter);
